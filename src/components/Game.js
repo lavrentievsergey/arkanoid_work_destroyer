@@ -703,6 +703,11 @@ class Game {
     gameOver() {
         this.gameState = 'gameOver';
         
+        // Reset difficulty to normal for next game
+        this.level = 1;
+        this.ball.setSpeed(5); // Reset to original ball speed
+        this.updateLevelDisplay();
+        
         // Show random funny game over message
         const messages = this.gameOverMessages[this.dataSource];
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
