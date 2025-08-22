@@ -132,22 +132,73 @@ class ArkanoidApp {
 
     toggleSettings() {
         const dropdown = document.querySelector('.settings-dropdown');
-        dropdown.classList.toggle('hidden');
+        const isCurrentlyHidden = dropdown.classList.contains('hidden');
+        
+        if (isCurrentlyHidden) {
+            // Opening settings - pause game if it's playing
+            if (this.game && this.game.gameState === 'playing') {
+                this.game.gameState = 'paused';
+                this.game.wasAutoPaused = true; // Flag to indicate auto-pause by settings
+                // Store exact velocity and speed for auto-pause
+                this.game.pausedVelocity = { 
+                    x: this.game.ball.velocity.x, 
+                    y: this.game.ball.velocity.y 
+                };
+                this.game.pausedSpeed = this.game.ball.speed;
+                this.game.showScreen('pause-screen');
+            }
+            dropdown.classList.remove('hidden');
+        } else {
+            // Closing settings - resume game if it was auto-paused
+            dropdown.classList.add('hidden');
+            if (this.game && this.game.gameState === 'paused' && this.game.wasAutoPaused) {
+                this.game.gameState = 'playing';
+                this.game.wasAutoPaused = false;
+                // Restore exact velocity and speed
+                if (this.game.pausedVelocity) {
+                    this.game.ball.velocity.x = this.game.pausedVelocity.x;
+                    this.game.ball.velocity.y = this.game.pausedVelocity.y;
+                }
+                if (this.game.pausedSpeed) {
+                    this.game.ball.speed = this.game.pausedSpeed;
+                }
+                this.game.hideAllScreens();
+                this.game.lastTime = performance.now(); // Reset timing to avoid jumps
+                this.game.gameLoop(performance.now());
+            }
+        }
     }
 
     hideSettings() {
         const dropdown = document.querySelector('.settings-dropdown');
         dropdown.classList.add('hidden');
+        
+        // Resume game if it was auto-paused by settings
+        if (this.game && this.game.gameState === 'paused' && this.game.wasAutoPaused) {
+            this.game.gameState = 'playing';
+            this.game.wasAutoPaused = false;
+            // Restore exact velocity and speed
+            if (this.game.pausedVelocity) {
+                this.game.ball.velocity.x = this.game.pausedVelocity.x;
+                this.game.ball.velocity.y = this.game.pausedVelocity.y;
+            }
+            if (this.game.pausedSpeed) {
+                this.game.ball.speed = this.game.pausedSpeed;
+            }
+            this.game.hideAllScreens();
+            this.game.lastTime = performance.now(); // Reset timing to avoid jumps
+            this.game.gameLoop(performance.now());
+        }
     }
 
     setDifficulty(difficulty) {
         const speedMap = {
             'easy': 3,
-            'normal': 5,
-            'hard': 7
+            'normal': 8,
+            'hard': 10
         };
         
-        const speed = speedMap[difficulty] || 5;
+        const speed = speedMap[difficulty] || 8;
         document.getElementById('ballSpeedSlider').value = speed;
         this.setBallSpeed(speed);
         

@@ -30,7 +30,7 @@ class Game {
             this.width / 2, 
             this.height - 50, 
             8, 
-            5
+            8
         );
         
         // Power-up system - initialize after ball is created
@@ -47,7 +47,7 @@ class Game {
         this.lastTime = 0;
         this.animationId = null;
         this.wasAutoPaused = false; // Track if game was auto-paused by mouse leave
-        this.currentLevelSpeed = 5; // Track current level's ball speed
+        this.currentLevelSpeed = 8; // Track current level's ball speed
         this.pausedVelocity = null; // Store exact velocity during pause
         this.pausedSpeed = null; // Store exact speed during pause
         this.skipNextNormalization = false; // Flag to skip normalization after resume
@@ -111,7 +111,13 @@ class Game {
             if (!inExpandedArea && this.gameState === 'playing') {
                 this.autoPause();
             } else if (inExpandedArea && this.gameState === 'paused' && this.wasAutoPaused) {
-                this.autoResume();
+                // Don't auto-resume if settings are open
+                const settingsDropdown = document.querySelector('.settings-dropdown');
+                const isSettingsOpen = settingsDropdown && !settingsDropdown.classList.contains('hidden');
+                
+                if (!isSettingsOpen) {
+                    this.autoResume();
+                }
             }
         });
 
@@ -339,6 +345,12 @@ class Game {
                     
                     if (y + blockHeight <= gameAreaHeight) { // Keep within game area
                         const block = new Block(x, y, width, blockHeight, meeting, this.dataSource);
+                        
+                        // Add power-up to regular blocks if enabled (lower chance than random events)
+                        if (this.powerUpsEnabled && Math.random() < 0.2) { // 20% chance for power-up
+                            block.powerType = Math.random() < 0.6 ? 'good' : 'bad'; // 60% good, 40% bad
+                        }
+                        
                         this.blocks.push(block);
                     }
                 }
@@ -417,6 +429,12 @@ class Game {
                 
                 if (y + blockHeight < this.height - 100) { // Leave space for paddle
                     const block = new Block(x, y, width, blockHeight, task, this.dataSource);
+                    
+                    // Add power-up to regular blocks if enabled (lower chance than random events)
+                    if (this.powerUpsEnabled && Math.random() < 0.2) { // 20% chance for power-up
+                        block.powerType = Math.random() < 0.6 ? 'good' : 'bad'; // 60% good, 40% bad
+                    }
+                    
                     this.blocks.push(block);
                 }
             });
@@ -613,6 +631,11 @@ class Game {
         // Add special visual effect for random blocks
         newBlock.isRandomEvent = true;
         newBlock.spawnTime = performance.now();
+        
+        // Add power-up to random blocks if enabled
+        if (this.powerUpsEnabled && Math.random() < 0.7) { // 70% chance for power-up
+            newBlock.powerType = Math.random() < 0.6 ? 'good' : 'bad'; // 60% good, 40% bad
+        }
         
         this.blocks.push(newBlock);
     }
@@ -897,7 +920,7 @@ class Game {
         this.score = 0;
         this.lives = 3;
         this.level = 1;
-        this.currentLevelSpeed = 5; // Reset to base speed
+        this.currentLevelSpeed = 8; // Reset to base speed
         this.pausedVelocity = null; // Reset paused velocity
         this.dataSource = Math.random() > 0.5 ? 'calendar' : 'jira'; // Random start
         this.lastEventTime = 0; // Reset random events
@@ -1022,7 +1045,7 @@ class Game {
     startNextLevel() {
         // Increase difficulty - faster progression for early levels
         const speedIncrease = (this.level <= 3) ? 0.7 + (this.level * 0.1) : 0.4 + (this.level * 0.1);
-        this.currentLevelSpeed = 5 + (this.level - 1) * speedIncrease; // Calculate absolute speed for this level
+        this.currentLevelSpeed = 8 + (this.level - 1) * speedIncrease; // Calculate absolute speed for this level
         this.ball.setSpeed(this.currentLevelSpeed);
         
         // Add more blocks with each level
@@ -1849,7 +1872,7 @@ class Game {
         
         // Reset difficulty to normal for next game
         this.level = 1;
-        this.currentLevelSpeed = 5;
+        this.currentLevelSpeed = 8;
         this.ball.setSpeed(this.currentLevelSpeed);
         this.updateLevelDisplay();
         
@@ -1936,7 +1959,7 @@ class Game {
         block.spawnTime = performance.now();
         
         // Add power-up to random blocks if enabled
-        if (this.powerUpsEnabled && Math.random() < 0.4) { // 40% chance for power-up
+        if (this.powerUpsEnabled && Math.random() < 0.7) { // 70% chance for power-up
             block.powerType = Math.random() < 0.6 ? 'good' : 'bad'; // 60% good, 40% bad
         }
         

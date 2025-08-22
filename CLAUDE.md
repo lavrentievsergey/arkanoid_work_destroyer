@@ -26,6 +26,8 @@ This is a web-based Arkanoid (brick breaker) game where blocks represent calenda
 - **Column-based positioning**: Blocks align to weekday columns (Calendar) or status columns (Jira)
 - **Humorous messaging**: Context-aware jokes for level completion, difficulty increases, and game over
 - **Automatic mode alternating**: Starting mode is random, then alternates between Calendar and Jira each level
+- **Power-up system**: Random blocks can have good or bad powers that affect gameplay
+- **Multi-ball physics**: Support for multiple balls with proper life management
 
 ## File Structure
 ```
@@ -34,18 +36,19 @@ This is a web-based Arkanoid (brick breaker) game where blocks represent calenda
 ├── styles/game.css         # Complete styling with Calendar/Jira themes
 ├── src/
 │   ├── components/
-│   │   ├── Game.js        # Main game logic and state management
-│   │   ├── Ball.js        # Ball physics and trail effects  
+│   │   ├── Game.js        # Main game logic, state management, and power-up system
+│   │   ├── Ball.js        # Ball physics and trail effects with multi-ball support
 │   │   ├── Paddle.js      # Paddle control with gradient styling
-│   │   └── Block.js       # Block rendering with data-specific content
+│   │   └── Block.js       # Block rendering with data-specific content and power-up effects
 │   ├── services/
 │   │   ├── authService.js # Mock authentication for both services
 │   │   ├── calendarService.js # Mock Calendar meeting data generation
-│   │   └── jiraService.js # Mock Jira task data generation
+│   │   ├── jiraService.js # Mock Jira task data generation
+│   │   └── localizationService.js # Multi-language support (Russian/English)
 │   ├── utils/
 │   │   ├── physics.js     # Collision detection and physics calculations
 │   │   └── gameHelpers.js # Utilities for colors, formatting, notifications
-│   └── app.js            # Application initialization and event handling
+│   └── app.js            # Application initialization, event handling, and settings auto-pause
 ├── README.md              # User documentation
 ├── CLAUDE.md             # This file
 └── .gitignore            # Git ignore rules for development
@@ -79,10 +82,14 @@ This is a web-based Arkanoid (brick breaker) game where blocks represent calenda
 ### Visual Design
 - **Calendar theme**: Purple gradient background with realistic calendar overlay showing current week dates
 - **Jira theme**: Blue gradient background with kanban board columns (To Do → Done)
-- **UI layout**: Level, lives, and score centered between title and data source toggle
+- **UI layout**: Level, lives, and score centered with current mode display
 - **Block styling**: Color-coded by meeting duration, task status/priority, or red for random events
+- **Power-up effects**: White glow for good powers, black glow for bad powers
 - **Animations**: Hit effects, destroy particles, ball trail, golden glow for random event blocks
+- **Status bar**: Active power-up effects display with timers
 - **Notifications**: Styled popups for random events, level completion, and difficulty warnings
+- **Lightning animations**: Chain reaction effects between blocks
+- **Explosion effects**: Multi-layered explosion animations with particles and debris
 
 ### Performance Optimizations
 - **60 FPS target**: Uses `requestAnimationFrame` for smooth gameplay
@@ -96,6 +103,21 @@ This is a web-based Arkanoid (brick breaker) game where blocks represent calenda
 - **Dynamic block creation**: Finds suitable positions in appropriate columns
 - **Visual distinction**: Random event blocks have red color and golden glow effect
 - **Context-aware content**: Emergency meetings for Calendar, critical bugs for Jira
+
+### Power-up System
+- **Block power probability**: 70% chance for random event blocks, 20% for regular blocks
+- **Power distribution**: 60% good powers, 40% bad powers
+- **Good powers**:
+  - **Multi-Ball**: Spawns 3 balls total, lives only lost when all balls are gone
+  - **Explosion**: Destroys all blocks within 3-block radius with visual explosion effect
+  - **Chain Reaction**: Next 3 hits damage 3 closest blocks with lightning animation
+- **Bad powers**:
+  - **Extra Blocks**: Spawns 3 additional blocks randomly on the field
+  - **Chaos Ball**: Ball changes direction randomly every second for 5 seconds
+  - **Tiny Ball**: Ball becomes smaller and 20% slower for 5 seconds
+- **Status tracking**: Active effects shown in status bar with countdown timers
+- **Settings toggle**: Power-ups can be disabled in settings panel
+- **Visual feedback**: White glow for good powers, dark glow for bad powers
 
 ## Development Commands
 
@@ -132,18 +154,23 @@ open index.html
 - **Context-aware**: All messages match the current data source theme
 
 ### User Interface
-- **Clean layout**: Level, lives, and score positioned between title and toggle
+- **Clean layout**: Level, lives, and score positioned with current mode display
+- **Auto-pause**: Game automatically pauses when settings panel is opened
+- **Settings panel**: Difficulty, ball speed, random blocks, and power-ups toggles
+- **Language support**: Russian/English language switcher in header
+- **Status bar**: Shows active power-up effects with countdown timers
 - **Real-time updates**: UI elements update immediately when values change
 - **Responsive overlays**: Calendar and kanban board backgrounds with proper column alignment
 - **Visual feedback**: Notifications, animations, and particle effects enhance user experience
 
 ## Future Enhancement Ideas
 - **Real API integration**: Replace mock services with actual Calendar/Jira APIs
-- **Power-ups**: Multi-ball, paddle size changes, time effects
+- **Additional power-ups**: Paddle size changes, time effects, shield, laser
 - **Leaderboards**: Score tracking and persistence
 - **Mobile support**: Touch controls for mobile devices
 - **Sound improvements**: Better audio effects and background music
-- **Custom difficulty**: Player-adjustable speed and event frequency settings
+- **Achievements system**: Unlock rewards for various gameplay milestones
+- **Boss battles**: Special end-of-level challenges with unique mechanics
 
 ## Known Limitations
 - **No persistence**: Game state is not saved between sessions
@@ -156,12 +183,33 @@ open index.html
 - **Mock data refresh**: Update `getMockCalendarData()` and `getMockJiraData()` for variety
 - **Visual themes**: Modify CSS gradients and colors in `game.css` for theme updates  
 - **Game balance**: Adjust ball speed, block strength, and scoring in `Game.js`
+- **Power-up tuning**: Modify power probabilities, durations, and effects in `Game.js` activatePowerUp methods
+- **Power-up visuals**: Update glow effects, animations, and particles in `game.css` and `Block.js`
 - **Sound effects**: Audio generation handled in `gameHelpers.js` with Web Audio API
 - **Message updates**: Add/modify humorous messages in respective `getMessage()` methods
 - **Random events**: Adjust probability calculations and timing in `checkRandomEvents()`
 - **UI positioning**: Modify header layout in `index.html` and corresponding CSS
+- **Localization**: Add new translations in `localizationService.js` for both languages
 
 ## Recent Updates
+
+### Power-up System Implementation (Latest)
+- **Comprehensive power-up system**: Added 6 different powers (3 good, 3 bad) with visual effects
+- **Multi-ball support**: Complete multi-ball physics with proper life management
+- **Power-up probability**: 70% chance for random events, 20% for regular blocks
+- **Status bar**: Real-time display of active effects with countdown timers
+- **Visual effects**: Lightning animations, explosion effects, glowing blocks
+- **Settings toggle**: Power-ups can be disabled in game settings
+- **Increased power frequency**: Significantly more powered blocks throughout gameplay
+
+### UI and Quality of Life Improvements
+- **Auto-pause settings**: Game automatically pauses when settings panel is opened
+- **Smart resume**: Game only auto-resumes if it was auto-paused (respects manual pause)
+- **Game state fixes**: Fixed game over issues with single ball loss in multi-ball mode
+- **Duplicate method cleanup**: Removed duplicate gameOver() and levelComplete() methods
+- **Enhanced status tracking**: Better game state management and effect tracking
+
+### Previous Major Updates
 - **Automatic Mode Switching**: Removed manual toggle, game now automatically alternates between Calendar and Jira each level
 - **Random Starting Mode**: Each game starts with a randomly selected mode (Calendar or Jira)
 - **Current Mode Display**: Added indicator showing which mode is currently active
