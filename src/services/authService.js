@@ -1,14 +1,14 @@
 const AuthService = {
     isAuthenticated: {
-        teams: false,
+        calendar: false,
         jira: false
     },
 
-    authenticateTeams() {
+    authenticateCalendar() {
         return new Promise((resolve) => {
             setTimeout(() => {
-                this.isAuthenticated.teams = true;
-                GameHelpers.showNotification('Connected to Teams (Mock)', 'success');
+                this.isAuthenticated.calendar = true;
+                GameHelpers.showNotification('Connected to Calendar (Mock)', 'success');
                 resolve(true);
             }, 1000);
         });

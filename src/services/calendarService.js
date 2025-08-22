@@ -1,9 +1,9 @@
-const TeamsService = {
+const CalendarService = {
     async getMeetings() {
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Generate more realistic mock Teams meeting data
+        // Generate more realistic mock Calendar meeting data
         const meetingTypes = [
             'Daily Standup', 'Sprint Planning', 'Sprint Review', 'Retrospective',
             'Code Review', 'Architecture Discussion', '1:1 Meeting', 'Team Lunch',
@@ -43,7 +43,7 @@ const TeamsService = {
                 attendeesCount: Math.floor(Math.random() * 10) + 2,
                 isRecurring: Math.random() > 0.7,
                 importance: ['low', 'normal', 'high'][Math.floor(Math.random() * 3)],
-                location: Math.random() > 0.5 ? 'Conference Room A' : 'Microsoft Teams Meeting',
+                location: Math.random() > 0.5 ? 'Conference Room A' : 'Microsoft Calendar Meeting',
                 hasAttachments: Math.random() > 0.8
             });
         }
@@ -88,7 +88,7 @@ const TeamsService = {
             duration: meeting.duration,
             organizer: meeting.organizer,
             priority: meeting.importance,
-            type: meeting.location.includes('Teams') ? 'online' : 'inperson'
+            type: meeting.location.includes('Calendar') ? 'online' : 'inperson'
         };
     }
 };

@@ -1,7 +1,7 @@
 class ArkanoidApp {
     constructor() {
         this.game = null;
-        this.currentDataSource = 'teams';
+        this.currentDataSource = 'calendar';
         this.isLoading = false;
         
         this.initializeApp();
@@ -11,6 +11,12 @@ class ArkanoidApp {
         this.game = new Game('gameCanvas');
         this.setupEventListeners();
         this.showStartScreen();
+        
+        // Initialize language selector and settings
+        setTimeout(() => {
+            LocalizationService.updateLanguageSelector();
+            this.initializeSettings();
+        }, 100);
     }
 
     setupEventListeners() {
@@ -40,10 +46,11 @@ class ArkanoidApp {
             this.game.startNextLevel();
         });
 
-        // Data source toggle
-        document.getElementById('dataSourceToggle').addEventListener('change', (e) => {
-            const newSource = e.target.checked ? 'jira' : 'teams';
-            this.switchDataSource(newSource);
+        // Data source is now automatic - no toggle needed
+
+        // Language selector
+        document.getElementById('languageSelect').addEventListener('change', (e) => {
+            LocalizationService.setLanguage(e.target.value);
         });
 
         // Settings
@@ -57,6 +64,16 @@ class ArkanoidApp {
 
         document.getElementById('ballSpeedSlider').addEventListener('input', (e) => {
             this.setBallSpeed(parseInt(e.target.value));
+        });
+
+        // Random blocks toggle
+        document.getElementById('randomBlocksToggle').addEventListener('change', (e) => {
+            this.setRandomBlocksEnabled(e.target.checked);
+        });
+
+        // Power-ups toggle
+        document.getElementById('powerUpsToggle').addEventListener('change', (e) => {
+            this.setPowerUpsEnabled(e.target.checked);
         });
 
         // Close settings when clicking outside
@@ -76,11 +93,12 @@ class ArkanoidApp {
         this.showLoading();
         
         try {
-            // Simulate loading data (mock authentication)
-            if (this.currentDataSource === 'teams' && !AuthService.isAuthenticated.teams) {
-                await AuthService.authenticateTeams();
-                await TeamsService.getMeetings();
-            } else if (this.currentDataSource === 'jira' && !AuthService.isAuthenticated.jira) {
+            // Authenticate both services since we'll be switching between them
+            if (!AuthService.isAuthenticated.calendar) {
+                await AuthService.authenticateCalendar();
+                await CalendarService.getMeetings();
+            }
+            if (!AuthService.isAuthenticated.jira) {
                 await AuthService.authenticateJira();
                 await JiraService.getTasks();
             }
@@ -97,33 +115,6 @@ class ArkanoidApp {
         }
     }
 
-    async switchDataSource(newSource) {
-        if (newSource === this.currentDataSource) return;
-        
-        this.currentDataSource = newSource;
-        this.showLoading();
-        
-        try {
-            // Mock authentication for the new data source
-            if (newSource === 'teams' && !AuthService.isAuthenticated.teams) {
-                await AuthService.authenticateTeams();
-            } else if (newSource === 'jira' && !AuthService.isAuthenticated.jira) {
-                await AuthService.authenticateJira();
-            }
-
-            this.game.switchDataSource(newSource);
-            this.hideLoading();
-            
-            GameHelpers.showNotification(
-                `Switched to ${newSource === 'teams' ? 'Teams' : 'Jira'} mode`, 
-                'success'
-            );
-            
-        } catch (error) {
-            this.hideLoading();
-            GameHelpers.showNotification('Failed to switch data source', 'error');
-        }
-    }
 
     showStartScreen() {
         this.game.showScreen('start-screen');
@@ -169,6 +160,32 @@ class ArkanoidApp {
         }
     }
 
+    setRandomBlocksEnabled(enabled) {
+        if (this.game) {
+            this.game.setRandomBlocksEnabled(enabled);
+        }
+        GameHelpers.showNotification(`Random blocks ${enabled ? 'enabled' : 'disabled'}`, 'info');
+    }
+
+    setPowerUpsEnabled(enabled) {
+        if (this.game) {
+            this.game.setPowerUpsEnabled(enabled);
+        }
+        GameHelpers.showNotification(`Power-ups ${enabled ? 'enabled' : 'disabled'}`, 'info');
+    }
+
+    initializeSettings() {
+        // Set random blocks toggle based on saved setting
+        const savedRandomBlocks = localStorage.getItem('arkanoid_randomBlocks');
+        const isRandomBlocksEnabled = savedRandomBlocks !== null ? savedRandomBlocks === 'true' : true;
+        document.getElementById('randomBlocksToggle').checked = isRandomBlocksEnabled;
+        
+        // Set power-ups toggle based on saved setting
+        const savedPowerUps = localStorage.getItem('arkanoid_powerUps');
+        const isPowerUpsEnabled = savedPowerUps !== null ? savedPowerUps === 'true' : true;
+        document.getElementById('powerUpsToggle').checked = isPowerUpsEnabled;
+    }
+
     handleResize() {
         // Handle responsive design if needed
         const canvas = document.getElementById('gameCanvas');
@@ -203,8 +220,8 @@ class ArkanoidApp {
         try {
             let formattedData;
             
-            if (dataSource === 'teams') {
-                formattedData = apiData.map(meeting => TeamsService.formatMeetingForBlock(meeting));
+            if (dataSource === 'calendar') {
+                formattedData = apiData.map(meeting => CalendarService.formatMeetingForBlock(meeting));
             } else if (dataSource === 'jira') {
                 formattedData = apiData.map(task => JiraService.formatTaskForBlock(task));
             }
@@ -227,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.arkanoidApp = new ArkanoidApp();
     
     // Add some helpful console messages
-    console.log('🎮 Arkanoid Teams & Jira Edition loaded!');
-    console.log('Toggle between Teams and Jira modes using the switch in the header');
+    console.log('🎮 Arkanoid Calendar & Jira Edition loaded!');
+    console.log('Game automatically alternates between Calendar and Jira modes each level');
     console.log('Use arkanoidApp.getGameState() to inspect current game state');
 });

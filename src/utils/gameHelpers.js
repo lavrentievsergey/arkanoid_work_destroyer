@@ -13,9 +13,9 @@ const GameHelpers = {
         return text.substring(0, maxLength - 3) + '...';
     },
 
-    getColorByPriority: function(priority, type = 'teams') {
+    getColorByPriority: function(priority, type = 'calendar') {
         const colors = {
-            teams: {
+            calendar: {
                 high: '#FF6B6B',
                 medium: '#4ECDC4',
                 low: '#45B7D1',
@@ -48,7 +48,7 @@ const GameHelpers = {
     },
 
     calculateBlockStrength: function(item, type) {
-        if (type === 'teams') {
+        if (type === 'calendar') {
             const duration = item.duration || 30;
             if (duration >= 120) return 3;
             if (duration >= 60) return 2;

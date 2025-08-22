@@ -17,7 +17,7 @@ class Ball {
         this.isLaunched = true;
     }
 
-    update(canvasWidth, canvasHeight) {
+    update(canvasWidth, canvasHeight, skipNormalization = false, deltaTime = 16.67) {
         if (!this.isLaunched) return;
 
         this.trail.push({ x: this.x, y: this.y });
@@ -25,26 +25,41 @@ class Ball {
             this.trail.shift();
         }
 
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
+        // Scale movement by deltaTime for consistent speed regardless of framerate
+        const timeMultiplier = Math.min(deltaTime / 16.67, 2.0); // Cap at 2x to prevent huge jumps
+        
+        
+        const oldX = this.x;
+        const oldY = this.y;
+        this.x += this.velocity.x * timeMultiplier;
+        this.y += this.velocity.y * timeMultiplier;
 
+        // Improved boundary collision with clamping
         if (this.x - this.radius <= 0) {
             this.x = this.radius;
-            this.velocity.x = -this.velocity.x;
+            this.velocity.x = Math.abs(this.velocity.x); // Ensure positive velocity
             GameHelpers.playSound(220, 0.1);
         } else if (this.x + this.radius >= canvasWidth) {
             this.x = canvasWidth - this.radius;
-            this.velocity.x = -this.velocity.x;
+            this.velocity.x = -Math.abs(this.velocity.x); // Ensure negative velocity
             GameHelpers.playSound(220, 0.1);
         }
 
         if (this.y - this.radius <= 0) {
             this.y = this.radius;
-            this.velocity.y = -this.velocity.y;
+            this.velocity.y = Math.abs(this.velocity.y); // Ensure positive velocity
             GameHelpers.playSound(220, 0.1);
         }
 
-        this.velocity = Physics.normalizeSpeed(this.velocity, this.speed);
+        if (!skipNormalization) {
+            const oldVelocity = { x: this.velocity.x, y: this.velocity.y };
+            const oldSpeed = this.speed;
+            this.velocity = Physics.normalizeSpeed(this.velocity, this.speed);
+            const newSpeed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+            if (Math.abs(newSpeed - oldSpeed) > 0.01) {
+                }
+        } else {
+        }
     }
 
     checkPaddleCollision(paddle) {
@@ -78,16 +93,52 @@ class Ball {
         );
 
         if (collision) {
+            // Reflect velocity first
             this.velocity = Physics.reflectVelocity(this.velocity, collision);
             
+            // Position ball outside the block to prevent penetration
+            const blockBounds = block.getBounds();
+            
             if (collision === 'horizontal') {
-                this.y = this.velocity.y > 0 ? 
-                    block.y - this.radius : 
-                    block.y + block.height + this.radius;
+                // Ball hit top or bottom of block
+                if (this.y < blockBounds.y + blockBounds.height / 2) {
+                    // Ball hit from above
+                    this.y = blockBounds.y - this.radius - 1;
+                } else {
+                    // Ball hit from below
+                    this.y = blockBounds.y + blockBounds.height + this.radius + 1;
+                }
             } else if (collision === 'vertical') {
-                this.x = this.velocity.x > 0 ? 
-                    block.x - this.radius : 
-                    block.x + block.width + this.radius;
+                // Ball hit left or right side of block
+                if (this.x < blockBounds.x + blockBounds.width / 2) {
+                    // Ball hit from left
+                    this.x = blockBounds.x - this.radius - 1;
+                } else {
+                    // Ball hit from right
+                    this.x = blockBounds.x + blockBounds.width + this.radius + 1;
+                }
+            } else if (collision === 'corner') {
+                // Handle corner collision - push ball away from nearest corner
+                const centerX = blockBounds.x + blockBounds.width / 2;
+                const centerY = blockBounds.y + blockBounds.height / 2;
+                
+                const dx = this.x - centerX;
+                const dy = this.y - centerY;
+                
+                const absX = Math.abs(dx);
+                const absY = Math.abs(dy);
+                
+                if (absX > absY) {
+                    // Push horizontally
+                    this.x = dx > 0 ? 
+                        blockBounds.x + blockBounds.width + this.radius + 1 : 
+                        blockBounds.x - this.radius - 1;
+                } else {
+                    // Push vertically
+                    this.y = dy > 0 ? 
+                        blockBounds.y + blockBounds.height + this.radius + 1 : 
+                        blockBounds.y - this.radius - 1;
+                }
             }
 
             GameHelpers.playSound(440, 0.1);
@@ -172,6 +223,7 @@ class Ball {
     setSpeed(speed) {
         this.speed = speed;
         if (this.isLaunched) {
+            const oldVelocity = { x: this.velocity.x, y: this.velocity.y };
             this.velocity = Physics.normalizeSpeed(this.velocity, speed);
         }
     }

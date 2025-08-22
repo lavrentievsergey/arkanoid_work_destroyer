@@ -15,6 +15,8 @@ class Block {
         this.id = GameHelpers.generateId();
         this.isRandomEvent = false;
         this.spawnTime = 0;
+        this.powerType = null; // 'good', 'bad', or null
+        this.lightningEffect = null; // For chain reaction animation
     }
 
     calculateStrength() {
@@ -30,7 +32,7 @@ class Block {
         
         if (this.type === 'placeholder') {
             return '#95A5A6';
-        } else if (this.type === 'teams') {
+        } else if (this.type === 'calendar') {
             const duration = this.data.duration || 30;
             if (duration >= 120) return '#FF6B6B';
             if (duration >= 60) return '#FFA726';
@@ -87,6 +89,14 @@ class Block {
                 this.destroyAnimation = 0;
             }
         }
+
+        // Update lightning effect
+        if (this.lightningEffect) {
+            const elapsed = performance.now() - this.lightningEffect.startTime;
+            if (elapsed >= this.lightningEffect.duration) {
+                this.lightningEffect = null;
+            }
+        }
     }
 
     draw(ctx) {
@@ -113,6 +123,36 @@ class Block {
             const glowIntensity = Math.sin(elapsed * 0.01) * 0.3 + 0.7;
             ctx.shadowColor = '#FFD700';
             ctx.shadowBlur = 15 * glowIntensity;
+        }
+        
+        // Power-up glow effects
+        if (this.powerType === 'good') {
+            const elapsed = performance.now() - (this.spawnTime || 0);
+            const glowIntensity = Math.sin(elapsed * 0.005) * 0.4 + 0.6;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 20 * glowIntensity;
+        } else if (this.powerType === 'bad') {
+            const elapsed = performance.now() - (this.spawnTime || 0);
+            const glowIntensity = Math.sin(elapsed * 0.008) * 0.4 + 0.6;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+            ctx.shadowBlur = 18 * glowIntensity;
+        }
+
+        // Lightning effect for chain reaction
+        if (this.lightningEffect) {
+            const elapsed = performance.now() - this.lightningEffect.startTime;
+            const progress = elapsed / this.lightningEffect.duration;
+            const intensity = Math.sin(progress * Math.PI * 4) * (1 - progress);
+            
+            ctx.shadowColor = '#00FFFF';
+            ctx.shadowBlur = 30 * intensity;
+            
+            // Add electric blue overlay
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillStyle = `rgba(0, 255, 255, ${intensity * 0.3})`;
+            GameHelpers.drawRoundedRect(ctx, this.x, this.y, this.width, this.height, 6);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
         }
 
         ctx.globalAlpha = alpha;
@@ -158,8 +198,8 @@ class Block {
 
         if (this.type === 'placeholder') {
             ctx.fillText('Block', centerX, centerY);
-        } else if (this.type === 'teams') {
-            this.drawTeamsContent(ctx, centerX, centerY);
+        } else if (this.type === 'calendar') {
+            this.drawCalendarContent(ctx, centerX, centerY);
         } else if (this.type === 'jira') {
             this.drawJiraContent(ctx, centerX, centerY);
         }
@@ -171,7 +211,7 @@ class Block {
         }
     }
 
-    drawTeamsContent(ctx, centerX, centerY) {
+    drawCalendarContent(ctx, centerX, centerY) {
         const title = GameHelpers.truncateText(this.data.subject || 'Meeting', 12);
         const time = this.data.start ? GameHelpers.formatTime(this.data.start) : '';
 
@@ -187,14 +227,141 @@ class Block {
 
     drawJiraContent(ctx, centerX, centerY) {
         const key = this.data.key || 'TASK';
-        const title = GameHelpers.truncateText(this.data.summary || 'Task', 10);
+        const title = GameHelpers.truncateText(this.data.summary || 'Task', 16);
+        const priority = this.data.priority || 'medium';
+        const issueType = this.data.issueType || 'task';
+        const assignee = this.data.assignee || 'UN';
 
-        ctx.font = 'bold 8px Arial';
-        ctx.fillText(key, centerX, centerY - 6);
+        // Draw issue type icon (top-left)
+        this.drawIssueTypeIcon(ctx, this.x + 6, this.y + 6, issueType);
         
-        ctx.font = '8px Arial';
-        ctx.fillStyle = '#E0E0E0';
-        ctx.fillText(title, centerX, centerY + 6);
+        // Draw priority icon (top-right)
+        this.drawPriorityIcon(ctx, this.x + this.width - 15, this.y + 6, priority);
+        
+        // Draw task key
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'left';
+        ctx.fillText(key, this.x + 6, this.y + 24);
+        
+        // Draw task title (with word wrapping for longer text)
+        ctx.font = '9px Arial';
+        ctx.fillStyle = '#E8E8E8';
+        this.drawWrappedText(ctx, title, this.x + 6, this.y + 38, this.width - 12, 12);
+        
+        // Draw assignee avatar (bottom-right)
+        this.drawAssigneeAvatar(ctx, this.x + this.width - 18, this.y + this.height - 14, assignee);
+    }
+
+    drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
+        const words = text.split(' ');
+        let line = '';
+        let currentY = y;
+        
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            const testWidth = metrics.width;
+            
+            if (testWidth > maxWidth && n > 0) {
+                ctx.fillText(line, x, currentY);
+                line = words[n] + ' ';
+                currentY += lineHeight;
+                
+                // Stop if we're running out of space
+                if (currentY > y + lineHeight) break;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, x, currentY);
+    }
+
+    drawIssueTypeIcon(ctx, x, y, issueType) {
+        ctx.save();
+        ctx.font = '9px Arial';
+        ctx.textAlign = 'center';
+        
+        switch(issueType) {
+            case 'story':
+                ctx.fillStyle = '#65BA43';
+                ctx.fillRect(x, y, 10, 10);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText('S', x + 5, y + 7);
+                break;
+            case 'bug':
+                ctx.fillStyle = '#E5493A';
+                ctx.fillRect(x, y, 10, 10);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText('B', x + 5, y + 7);
+                break;
+            case 'task':
+                ctx.fillStyle = '#4BADE8';
+                ctx.fillRect(x, y, 10, 10);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText('T', x + 5, y + 7);
+                break;
+            case 'epic':
+                ctx.fillStyle = '#904EE2';
+                ctx.fillRect(x, y, 10, 10);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText('E', x + 5, y + 7);
+                break;
+            case 'subtask':
+                ctx.fillStyle = '#65BA43';
+                ctx.fillRect(x, y, 10, 10);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText('↳', x + 5, y + 7);
+                break;
+        }
+        ctx.restore();
+    }
+
+    drawPriorityIcon(ctx, x, y, priority) {
+        ctx.save();
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        
+        // Draw priority arrow
+        switch(priority) {
+            case 'highest':
+                ctx.fillStyle = '#CD1317';
+                ctx.fillText('↑↑', x, y + 8);
+                break;
+            case 'high':
+                ctx.fillStyle = '#E97F33';
+                ctx.fillText('↑', x, y + 8);
+                break;
+            case 'medium':
+                ctx.fillStyle = '#E2A60B';
+                ctx.fillText('→', x, y + 8);
+                break;
+            case 'low':
+                ctx.fillStyle = '#57A55A';
+                ctx.fillText('↓', x, y + 8);
+                break;
+            case 'lowest':
+                ctx.fillStyle = '#57A55A';
+                ctx.fillText('↓↓', x, y + 8);
+                break;
+        }
+        ctx.restore();
+    }
+
+    drawAssigneeAvatar(ctx, x, y, assignee) {
+        ctx.save();
+        // Draw circular avatar background
+        ctx.fillStyle = '#0052CC';
+        ctx.beginPath();
+        ctx.arc(x + 4, y + 4, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw initials
+        ctx.font = 'bold 7px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText(assignee, x + 4, y + 7);
+        ctx.restore();
     }
 
     drawBorder(ctx) {

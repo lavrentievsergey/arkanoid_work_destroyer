@@ -7,18 +7,43 @@ const Physics = {
     },
 
     checkCircleRectCollision: function(circle, rect) {
-        const distX = Math.abs(circle.x - rect.x - rect.width / 2);
-        const distY = Math.abs(circle.y - rect.y - rect.height / 2);
-
-        if (distX > (rect.width / 2 + circle.radius)) return null;
-        if (distY > (rect.height / 2 + circle.radius)) return null;
-
-        if (distX <= (rect.width / 2)) return 'vertical';
-        if (distY <= (rect.height / 2)) return 'horizontal';
-
-        const dx = distX - rect.width / 2;
-        const dy = distY - rect.height / 2;
-        return (dx * dx + dy * dy <= (circle.radius * circle.radius)) ? 'corner' : null;
+        // Find the closest point on the rectangle to the circle center
+        const closestX = Math.max(rect.x, Math.min(circle.x, rect.x + rect.width));
+        const closestY = Math.max(rect.y, Math.min(circle.y, rect.y + rect.height));
+        
+        // Calculate distance from circle center to closest point
+        const dx = circle.x - closestX;
+        const dy = circle.y - closestY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // No collision if distance is greater than radius
+        if (distance > circle.radius) return null;
+        
+        // Determine collision side based on the closest point
+        const centerX = rect.x + rect.width / 2;
+        const centerY = rect.y + rect.height / 2;
+        
+        const ballToCenterX = circle.x - centerX;
+        const ballToCenterY = circle.y - centerY;
+        
+        // Check if it's a corner collision
+        if (closestX !== circle.x && closestY !== circle.y) {
+            return 'corner';
+        }
+        
+        // Determine if it's horizontal or vertical collision
+        const absX = Math.abs(ballToCenterX);
+        const absY = Math.abs(ballToCenterY);
+        
+        // Use the ratio of distances to determine collision side more accurately
+        const ratioX = absX / (rect.width / 2);
+        const ratioY = absY / (rect.height / 2);
+        
+        if (ratioX > ratioY) {
+            return 'vertical'; // Hit left or right side
+        } else {
+            return 'horizontal'; // Hit top or bottom
+        }
     },
 
     reflectVelocity: function(velocity, collisionSide) {

@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background: linear-gradient(135deg, #4a3f5c 0%, #5a4e6a 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -15,13 +15,14 @@ body {
 }
 
 .game-container {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(138, 43, 226, 0.2);
     border-radius: 20px;
     backdrop-filter: blur(10px);
     padding: 20px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    max-width: 900px;
+    max-width: 1000px; /* Increased from 900px */
     width: 100%;
+    min-height: 700px; /* Add minimum height to accommodate all elements */
 }
 
 .game-header {
@@ -54,78 +55,37 @@ body {
 
 .game-header h1 {
     font-size: 2.5rem;
-    background: linear-gradient(45deg, #fff, #64b5f6);
+    background: linear-gradient(45deg, #fff, #d1c4e9);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .controls {
     display: flex;
     align-items: center;
+    gap: 15px;
 }
 
-.data-source-toggle {
+.current-mode {
     position: relative;
-}
-
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 120px;
-    height: 40px;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, #4CAF50, #45a049);
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 15px;
     border-radius: 20px;
-    transition: 0.3s;
+    font-size: 0.9rem;
+    font-weight: bold;
+    backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
-    font-size: 0.8rem;
-    font-weight: bold;
+    gap: 5px;
 }
 
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 32px;
-    width: 32px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    border-radius: 50%;
-    transition: 0.3s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+#currentModeDisplay {
+    color: #FFD700;
 }
 
-input:checked + .slider {
-    background: linear-gradient(45deg, #2196F3, #1976D2);
-}
-
-input:checked + .slider:before {
-    transform: translateX(80px);
-}
-
-.teams-label, .jira-label {
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    z-index: 1;
-}
+/* Language selector now in settings dropdown */
 
 /* Score styling moved to .game-info section */
 
@@ -133,93 +93,227 @@ input:checked + .slider:before {
     position: relative;
     display: flex;
     justify-content: center;
+    margin: 80px 40px 20px 40px; /* Top: 80px for calendar header, Left/Right: 40px for time column, Bottom: 20px spacing */
+    padding: 0; /* Remove padding so headers connect directly to canvas */
 }
 
 #gameCanvas {
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    background: #000;
+    border: none; /* Remove border so headers connect directly */
+    border-radius: 0; /* Remove border radius for flush connection */
+    background: rgba(0, 0, 0, 0.3);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
     position: relative;
 }
 
-.teams-calendar-overlay, .jira-board-overlay {
+.calendar-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: -80px; /* Move headers above canvas */
+    left: 40px; /* Offset to make room for time column */
+    width: 800px; /* Match canvas width exactly */
+    height: calc(600px + 80px); /* Match canvas height + header */
     pointer-events: none;
     z-index: 1;
 }
 
-.teams-calendar-header {
-    display: flex;
-    background: rgba(100, 71, 171, 0.9);
-    height: 80px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+.jira-board-overlay {
+    position: absolute;
+    top: -60px; /* Move headers above canvas (Jira header is 60px) */
+    left: 40px; /* Align with canvas left edge */
+    width: 800px; /* Exactly match canvas width */
+    height: calc(600px + 60px); /* Match canvas height + Jira header */
+    pointer-events: none;
 }
 
-.teams-day-column {
+.calendar-header {
+    display: flex;
+    background: rgba(55, 71, 79, 0.9);
+    height: 50px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 30px 0 0 0;
+    padding: 0;
+}
+
+.calendar-time-header {
+    width: 40px;
+    position: absolute;
+    left: -40px; /* Position directly to the left of overlay */
+    top: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+    background: rgba(55, 71, 79, 0.9);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 30px 0 0 0;
+    padding: 0;
+}
+
+.calendar-time-header-right {
+    width: 40px;
+    position: absolute;
+    right: -40px; /* Position directly to the right of overlay */
+    top: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+    background: rgba(55, 71, 79, 0.9);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 30px 0 0 0;
+    padding: 0;
+}
+
+.calendar-days-header {
+    width: 800px; /* Exactly match canvas width */
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.calendar-body {
+    position: absolute;
+    height: 600px; /* Match canvas height */
+    top: 80px; /* Position below the header */
+    width: 100%;
+}
+
+.calendar-day-column {
     flex: 1;
-    padding: 8px;
+    padding: 4px 2px; /* Minimal padding for text readability */
     text-align: center;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: 1px solid rgba(255, 255, 255, 0.1); /* Add vertical grid lines */
     color: white;
     font-size: 12px;
 }
 
-.teams-day-column:last-child {
+.calendar-day-column:last-child {
     border-right: none;
 }
 
-.teams-day-name {
+.calendar-day-name {
     font-weight: bold;
     margin-bottom: 4px;
 }
 
-.teams-day-date {
+.calendar-day-date {
     font-size: 10px;
     opacity: 0.8;
 }
 
-.teams-time-column {
-    position: absolute;
-    left: 0;
-    top: 80px;
+.calendar-time-column {
     width: 40px;
-    height: calc(100% - 80px);
-    background: rgba(100, 71, 171, 0.7);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    left: -40px; /* Position directly to the left of overlay */
+    height: 600px; /* Full canvas height */
+    background: rgba(55, 71, 79, 0.8);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
-.teams-time-slot {
-    height: 60px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 8px;
+.calendar-time-column-right {
+    width: 40px;
+    position: absolute;
+    right: -40px; /* Position directly to the right of overlay */
+    height: 600px; /* Full canvas height */
+    background: rgba(55, 71, 79, 0.8);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-days-body {
+    width: 800px; /* Exactly match canvas width */
+    position: relative;
+}
+
+/* Calendar grid overlay for Teams-like appearance */
+.calendar-grid {
+    position: absolute;
+    top: 80px; /* Start below headers, align with canvas top */
+    left: 0; /* Align with day columns */
+    width: 800px; /* Match canvas width */
+    height: 600px; /* Match canvas height */
+    pointer-events: none;
+    z-index: 0; /* Behind the blocks */
+    
+    /* Create grid pattern */
+    background-image: 
+        /* Vertical lines for day columns (800px / 5 days = 160px per column) */
+        repeating-linear-gradient(
+            to right,
+            transparent 0px,
+            transparent 159px,
+            rgba(255, 255, 255, 0.15) 159px,
+            rgba(255, 255, 255, 0.15) 160px
+        ),
+        /* Horizontal lines for time slots (40px per hour) */
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0px,
+            transparent 39px,
+            rgba(255, 255, 255, 0.15) 39px,
+            rgba(255, 255, 255, 0.15) 40px
+        );
+}
+
+.calendar-time-slot {
+    height: 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Add grid lines */
+    font-size: 9px;
     color: white;
-    padding: 2px;
+    margin: 0;
+    padding: 0;
     text-align: center;
+    display: flex;
+    align-items: flex-end; /* Align to bottom of slot to match grid lines */
+    justify-content: center;
+    font-weight: 500;
+    padding-bottom: 2px; /* Small offset from bottom */
+    box-sizing: border-box;
 }
 
 .jira-board-header {
     display: flex;
-    background: rgba(0, 82, 204, 0.9);
+    background: rgba(55, 71, 79, 0.9);
     height: 60px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    width: 800px; /* Exactly match canvas width */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 0;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .jira-column {
     flex: 1;
-    padding: 8px;
+    padding: 12px 8px;
     text-align: center;
     border-right: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 11px;
-    font-weight: bold;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(55, 71, 79, 0.9);
 }
 
 .jira-column:last-child {
@@ -230,15 +324,19 @@ input:checked + .slider:before {
     position: absolute;
     top: 60px;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 800px; /* Exactly match canvas width */
+    height: calc(600px - 60px); /* Canvas height minus header */
     display: flex;
+    z-index: -1; /* Put column areas behind canvas */
 }
 
 .jira-column-area {
     flex: 1;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 82, 204, 0.1);
+    background: rgba(55, 71, 79, 0.6);
+    margin: 0;
+    padding: 8px;
+    min-height: 540px;
 }
 
 .jira-column-area:last-child {
@@ -254,7 +352,8 @@ input:checked + .slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
     border-radius: 10px;
     z-index: 10;
 }
@@ -272,9 +371,10 @@ input:checked + .slider:before {
 .level-complete-screen h2, .difficulty-warning-screen h2 {
     font-size: 2rem;
     margin-bottom: 20px;
-    background: linear-gradient(45deg, #fff, #64b5f6);
+    background: linear-gradient(45deg, #fff, #d1c4e9);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .difficulty-details {
@@ -356,6 +456,7 @@ input:checked + .slider:before {
     margin-bottom: 10px;
     min-width: 200px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    z-index: 9999; /* Highest z-index to never be overlapped */
 }
 
 .setting-item {
@@ -368,13 +469,20 @@ input:checked + .slider:before {
     font-weight: bold;
 }
 
-.setting-item select, .setting-item input {
+.setting-item select, .setting-item input[type="range"] {
     width: 100%;
     padding: 8px;
     border: none;
     border-radius: 5px;
     background: rgba(255, 255, 255, 0.1);
     color: white;
+}
+
+.setting-item input[type="checkbox"] {
+    width: auto;
+    transform: scale(1.5);
+    margin-left: 10px;
+    accent-color: #4CAF50;
 }
 
 .loading-overlay {
@@ -406,6 +514,106 @@ input:checked + .slider:before {
     100% { transform: rotate(360deg); }
 }
 
+@keyframes salute {
+    0% { 
+        transform: translateY(100vh) scale(0.5);
+        opacity: 0;
+    }
+    20% { 
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    80% { 
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% { 
+        transform: translateY(-100vh) scale(0.5);
+        opacity: 0;
+    }
+}
+
+.salute-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.salute-emoji {
+    font-size: 8rem;
+    animation: salute 3s ease-in-out;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+}
+
+.status-bar {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    margin: 0 40px 10px 40px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.active-effects {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.effect-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.effect-good {
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    color: #4CAF50;
+}
+
+.effect-bad {
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    color: #F44336;
+}
+
+.effect-timer {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.power-block-good {
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8) !important;
+    border: 2px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+.power-block-bad {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.9) !important;
+    border: 2px solid rgba(50, 50, 50, 0.8) !important;
+}
+
+@keyframes lightning {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(3) hue-rotate(60deg); }
+    100% { filter: brightness(1); }
+}
+
+.chain-reaction {
+    animation: lightning 0.3s ease-in-out;
+}
+
 .hidden {
     display: none !important;
 }
@@ -414,6 +622,13 @@ input:checked + .slider:before {
     .game-container {
         padding: 10px;
         margin: 10px;
+        max-width: 95%; /* Use more screen space on mobile */
+        min-height: 600px; /* Reduced min height for mobile */
+    }
+    
+    .game-area {
+        margin: 60px 20px 10px 20px; /* Reduced margins for mobile */
+        padding: 0; /* No padding to maintain flush connection */
     }
     
     .game-header {
